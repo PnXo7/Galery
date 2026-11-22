@@ -1,0 +1,15 @@
+name = "inolvidable-fotografia"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "public"
+
+# Después de crear los recursos en Cloudflare, reemplaza los IDs:
+#   npx wrangler d1 create inolvidable-db
+#   npx wrangler r2 bucket create inolvidable-fotos
+[[d1_databases]]
+binding = "DB"
+database_name = "inolvidable-db"
+database_id = "REEMPLAZA_CON_TU_D1_ID"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "inolvidable-fotos"

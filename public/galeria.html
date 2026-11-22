@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi galería — Inolvidable Fotografía</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="nav scrolled">
+  <a class="brand" href="index.html"><span class="brand-mark">I</span><span class="brand-text">INOLVIDABLE<small>FOTOGRAFÍA</small></span></a>
+  <a class="btn btn-ghost btn-small" href="index.html">← Volver al inicio</a>
+</header>
+
+<main class="page">
+  <div class="container">
+    <div id="loading" class="center-msg">Cargando tu galería… 💛</div>
+
+    <div id="code-entry" class="hidden">
+      <h2 class="section-title">Mis <em>Fotos</em></h2>
+      <form class="code-box" id="code-form">
+        <label for="code-input">Código de tu galería</label>
+        <div class="code-row">
+          <input id="code-input" type="text" placeholder="Ej: MARTINA2026-AB12" autocomplete="off">
+          <button class="btn btn-gold" type="submit">Ingresar</button>
+        </div>
+        <p class="code-hint" id="code-msg">Ingresa el código que te entregó tu fotógrafo.</p>
+      </form>
+    </div>
+
+    <div id="gallery-view" class="hidden">
+      <div class="gallery-head">
+        <div>
+          <p class="eyebrow">TU GALERÍA PRIVADA</p>
+          <h2 id="g-title"></h2>
+          <p class="gallery-meta" id="g-meta"></p>
+        </div>
+        <div class="gallery-actions">
+          <button class="btn btn-ghost btn-small" id="btn-fav-zip">⬇ Favoritas (<span id="fav-count">0</span>)</button>
+          <button class="btn btn-gold btn-small" id="btn-all-zip">⬇ Descargar todas</button>
+        </div>
+      </div>
+      <div class="masonry gallery-grid" id="gallery-grid"></div>
+      <p class="note">Toca una foto para verla en grande · Marca con ❤️ tus favoritas · Descarga en calidad original.</p>
+    </div>
+
+    <div id="error-view" class="center-msg hidden"></div>
+  </div>
+</main>
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lb-close" id="lb-close">✕</button>
+  <button class="lb-nav" id="lb-prev">‹</button>
+  <img id="lb-img" src="" alt="Foto en grande">
+  <button class="lb-nav" id="lb-next">›</button>
+  <div class="lb-bar">
+    <button class="btn btn-ghost btn-small" id="lb-fav">♡ Favorita</button>
+    <a class="btn btn-gold btn-small" id="lb-dl" href="#" download>⬇ Descargar original</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="progress-wrap hidden" id="zip-progress"><div class="progress-box"><p id="zip-msg">Preparando tu ZIP…</p><div class="bar"><div id="zip-bar"></div></div></div></div>
+<script src="script.js"></script>
+<script src="galeria.js"></script>
+</body>
+</html>
