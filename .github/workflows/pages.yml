@@ -1,8 +1,8 @@
 name: Publicar maqueta (GitHub Pages)
 
 on:
-  push:
-    branches: ["arena/45a7dc7d-galery"]
+  # Manual hasta que el dueño active GitHub Pages en
+  # Settings -> Pages -> Source: "GitHub Actions".
   workflow_dispatch:
 
 permissions:
