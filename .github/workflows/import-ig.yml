@@ -1,6 +1,9 @@
 name: Importar fotos desde Instagram (una sola vez)
 
 on:
+  push:
+    branches: ["arena/45a7dc7d-galery"]
+    paths: [".github/workflows/import-ig.yml", "ig-trigger.txt"]
   workflow_dispatch:
 
 permissions:
