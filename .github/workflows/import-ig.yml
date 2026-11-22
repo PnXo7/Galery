@@ -3,7 +3,7 @@ name: Importar fotos desde Instagram (una sola vez)
 on:
   push:
     branches: ["arena/45a7dc7d-galery"]
-    paths: [".github/workflows/import-ig.yml", "ig-trigger.txt"]
+    paths: [".github/workflows/import-ig.yml", "ig-urls.txt"]
   workflow_dispatch:
 
 permissions:
@@ -14,48 +14,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Descargar fotos públicas de @fotografiainolvidable
+      - name: Descargar fotos (URLs CDN de Instagram)
         run: |
           mkdir -p ig-photos
           python3 - <<'PY'
-          import re, html, urllib.request, pathlib
-          UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'}
-          CODES = ["Cva1Lp-tZaB","CvX44E2rhtr","CupG9ktNVJC","Cum2W6-N7ko",
-                   "Cuj0XCYNviW","CufHVWNLP39","CuchYxXtG8N","CucZ-Lnsfal",
-                   "Ct4304lvvh4","Ct2YwfwLj_4","Ct1prPTObcv","CtzNzKENgad"]
-          def fetch(url):
-              req = urllib.request.Request(url, headers=UA)
-              return urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'ignore')
+          import urllib.request, pathlib
+          UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
           resumen = []
-          for i, code in enumerate(CODES, 1):
-              saved = False
-              for page in (f"https://www.instagram.com/p/{code}/embed/captioned/",
-                           f"https://imginn.com/p/{code}/"):
-                  try:
-                      data = fetch(page)
-                  except Exception as e:
-                      resumen.append(f"{code}: ERROR pagina {page.split('/')[2]}: {e}")
-                      continue
-                  clean = data.replace('\\/', '/').replace('\\u0026', '&').replace('&amp;', '&')
-                  urls = [html.unescape(u) for u in re.findall(r'https://scontent[^"\' )]+', clean)]
-                  urls = [u for u in urls if 't51.2885-19' not in u]  # no foto de perfil
-                  if not urls:
-                      resumen.append(f"{code}: sin imagen en {page.split('/')[2]} ({len(data)} bytes)")
-                      continue
-                  # La primera suele ser la principal; preferir la de mayor tamaño declarado
-                  u = urls[0]
-                  ext = 'webp' if '.webp' in u else 'jpg'
-                  out = pathlib.Path(f'ig-photos/ig-{i:02d}-{code}.{ext}')
-                  try:
-                      req = urllib.request.Request(u, headers=UA)
-                      out.write_bytes(urllib.request.urlopen(req, timeout=30).read())
-                      resumen.append(f"{code}: OK {out.name} {out.stat().st_size} bytes desde {page.split('/')[2]}")
-                      saved = True
-                      break
-                  except Exception as e:
-                      resumen.append(f"{code}: ERROR descarga: {e}")
-              if not saved:
-                  resumen.append(f"{code}: SIN FOTO")
+          for line in pathlib.Path('ig-urls.txt').read_text().splitlines():
+              line = line.strip()
+              if not line or '|' not in line:
+                  continue
+              name, url = line.split('|', 1)
+              out = pathlib.Path('ig-photos') / name
+              try:
+                  req = urllib.request.Request(url, headers=UA)
+                  data = urllib.request.urlopen(req, timeout=30).read()
+                  out.write_bytes(data)
+                  ok = len(data) > 8000
+                  resumen.append(f"{name}: {'OK' if ok else 'SOSPECHOSO'} {len(data)} bytes")
+                  if not ok:
+                      out.unlink(missing_ok=True)
+              except Exception as e:
+                  resumen.append(f"{name}: ERROR {e}")
           pathlib.Path('ig-photos/RESUMEN.txt').write_text("\n".join(resumen) + "\n")
           print("\n".join(resumen))
           PY
