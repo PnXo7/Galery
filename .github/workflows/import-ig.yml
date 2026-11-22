@@ -16,35 +16,48 @@ jobs:
       - uses: actions/checkout@v4
       - name: Descargar fotos públicas de @fotografiainolvidable
         run: |
-          set -e
           mkdir -p ig-photos
-          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
-          curl -sL -A "$UA" "https://imginn.com/fotografiainolvidable/" -o profile.html
-          echo "HTML bytes: $(wc -c < profile.html)"
           python3 - <<'PY'
           import re, html, urllib.request, pathlib
-          data = pathlib.Path('profile.html').read_text(errors='ignore')
-          urls = re.findall(r'https://scontent[^"\' )]+', data)
-          urls = [html.unescape(u) for u in urls]
-          # Solo fotos de publicaciones (640px), sin foto de perfil
-          urls = [u for u in urls if 's640x640' in u]
-          seen = []
-          for u in urls:
-              if u not in seen:
-                  seen.append(u)
-          print(f"{len(seen)} fotos encontradas")
-          req_headers = {'User-Agent': 'Mozilla/5.0'}
-          for i, u in enumerate(seen[:20], 1):
-              ext = 'webp' if '.webp' in u else 'jpg'
-              out = pathlib.Path(f'ig-photos/ig-{i:02d}.{ext}')
-              try:
-                  req = urllib.request.Request(u, headers=req_headers)
-                  out.write_bytes(urllib.request.urlopen(req, timeout=30).read())
-                  print(out, out.stat().st_size)
-              except Exception as e:
-                  print('ERROR', u[:80], e)
+          UA = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'}
+          CODES = ["Cva1Lp-tZaB","CvX44E2rhtr","CupG9ktNVJC","Cum2W6-N7ko",
+                   "Cuj0XCYNviW","CufHVWNLP39","CuchYxXtG8N","CucZ-Lnsfal",
+                   "Ct4304lvvh4","Ct2YwfwLj_4","Ct1prPTObcv","CtzNzKENgad"]
+          def fetch(url):
+              req = urllib.request.Request(url, headers=UA)
+              return urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'ignore')
+          resumen = []
+          for i, code in enumerate(CODES, 1):
+              saved = False
+              for page in (f"https://www.instagram.com/p/{code}/embed/captioned/",
+                           f"https://imginn.com/p/{code}/"):
+                  try:
+                      data = fetch(page)
+                  except Exception as e:
+                      resumen.append(f"{code}: ERROR pagina {page.split('/')[2]}: {e}")
+                      continue
+                  urls = [html.unescape(u) for u in re.findall(r'https://scontent[^"\' )\\]+', data)]
+                  urls = [u for u in urls if 't51.2885-19' not in u]  # no foto de perfil
+                  if not urls:
+                      resumen.append(f"{code}: sin imagen en {page.split('/')[2]} ({len(data)} bytes)")
+                      continue
+                  # La primera suele ser la principal; preferir la de mayor tamaño declarado
+                  u = urls[0]
+                  ext = 'webp' if '.webp' in u else 'jpg'
+                  out = pathlib.Path(f'ig-photos/ig-{i:02d}-{code}.{ext}')
+                  try:
+                      req = urllib.request.Request(u, headers=UA)
+                      out.write_bytes(urllib.request.urlopen(req, timeout=30).read())
+                      resumen.append(f"{code}: OK {out.name} {out.stat().st_size} bytes desde {page.split('/')[2]}")
+                      saved = True
+                      break
+                  except Exception as e:
+                      resumen.append(f"{code}: ERROR descarga: {e}")
+              if not saved:
+                  resumen.append(f"{code}: SIN FOTO")
+          pathlib.Path('ig-photos/RESUMEN.txt').write_text("\n".join(resumen) + "\n")
+          print("\n".join(resumen))
           PY
-          ls -lh ig-photos/ | tee ig-photos/RESUMEN.txt
       - name: Guardar fotos en el repositorio
         run: |
           git config user.name "github-actions[bot]"
