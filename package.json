@@ -1,0 +1,12 @@
+{
+  "name": "inolvidable-fotografia",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1=DB --r2=BUCKET --local",
+    "deploy": "wrangler pages deploy public",
+    "db:local": "wrangler d1 migrations apply inolvidable-db --local",
+    "db:remote": "wrangler d1 migrations apply inolvidable-db --remote"
+  },
+  "devDependencies": { "wrangler": "^3.90.0" }
+}

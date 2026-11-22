@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del fotógrafo — Inolvidable Fotografía</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="nav scrolled">
+  <a class="brand" href="index.html"><span class="brand-mark">I</span><span class="brand-text">INOLVIDABLE<small>FOTOGRAFÍA</small></span></a>
+  <span class="admin-badge">PANEL DEL FOTÓGRAFO</span>
+</header>
+
+<main class="page">
+  <div class="container">
+    <!-- LOGIN -->
+    <div id="login-view">
+      <h2 class="section-title">Panel <em>privado</em></h2>
+      <form class="code-box" id="login-form">
+        <label for="pw">Tu contraseña de administrador</label>
+        <div class="code-row">
+          <input id="pw" type="password" placeholder="Contraseña" autocomplete="current-password">
+          <button class="btn btn-gold" type="submit">Entrar</button>
+        </div>
+        <p class="code-hint" id="login-msg"></p>
+      </form>
+    </div>
+
+    <!-- PANEL -->
+    <div id="panel-view" class="hidden">
+      <div class="panel-head">
+        <h2 class="section-title left">Mis <em>galerías</em></h2>
+        <button class="btn btn-ghost btn-small" id="btn-logout">Cerrar sesión</button>
+      </div>
+
+      <div class="panel-card">
+        <h3>➕ Nueva galería de cliente</h3>
+        <form id="new-gallery-form" class="form-grid">
+          <input id="ng-title" type="text" placeholder="Ej: Martina — Recién nacida" required>
+          <input id="ng-date" type="date">
+          <select id="ng-months"><option value="3">Vence en 3 meses</option><option value="5">Vence en 5 meses</option><option value="6" selected>Vence en 6 meses</option></select>
+          <button class="btn btn-gold btn-small" type="submit">Crear galería</button>
+        </form>
+        <div id="ng-result" class="result hidden"></div>
+      </div>
+
+      <div id="gallery-list" class="gallery-list"></div>
+
+      <div class="panel-card">
+        <h3>🖼️ Portafolio de la página de inicio</h3>
+        <form id="portfolio-form" class="form-grid">
+          <select id="pf-cat"></select>
+          <input id="pf-file" type="file" accept="image/*" required>
+          <button class="btn btn-gold btn-small" type="submit">Subir al portafolio</button>
+        </form>
+        <div class="form-grid" style="margin-top:14px">
+          <input id="new-cat" type="text" placeholder="Nueva categoría (ej: Bautizos)">
+          <button class="btn btn-ghost btn-small" id="btn-add-cat" type="button">➕ Crear categoría</button>
+        </div>
+        <div id="pf-list" class="pf-list"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="progress-wrap hidden" id="up-progress"><div class="progress-box"><p id="up-msg">Subiendo…</p><div class="bar"><div id="up-bar"></div></div></div></div>
+<script src="script.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
