@@ -36,7 +36,8 @@ jobs:
                   except Exception as e:
                       resumen.append(f"{code}: ERROR pagina {page.split('/')[2]}: {e}")
                       continue
-                  urls = [html.unescape(u) for u in re.findall(r'https://scontent[^"\' )\\]+', data)]
+                  clean = data.replace('\\/', '/').replace('\\u0026', '&').replace('&amp;', '&')
+                  urls = [html.unescape(u) for u in re.findall(r'https://scontent[^"\' )]+', clean)]
                   urls = [u for u in urls if 't51.2885-19' not in u]  # no foto de perfil
                   if not urls:
                       resumen.append(f"{code}: sin imagen en {page.split('/')[2]} ({len(data)} bytes)")
