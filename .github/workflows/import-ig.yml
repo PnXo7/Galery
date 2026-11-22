@@ -7,12 +7,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   import:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Descargar fotos públicas de @fotografiainolvidable
         run: |
           set -e
@@ -43,9 +44,11 @@ jobs:
               except Exception as e:
                   print('ERROR', u[:80], e)
           PY
-          ls -lh ig-photos/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ig-photos
-          path: ig-photos/
-          retention-days: 7
+          ls -lh ig-photos/ | tee ig-photos/RESUMEN.txt
+      - name: Guardar fotos en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ig-photos/
+          git commit -m "Fotos importadas desde Instagram @fotografiainolvidable" || echo "Sin cambios"
+          git push
