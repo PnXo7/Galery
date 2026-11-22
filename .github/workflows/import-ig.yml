@@ -1,0 +1,48 @@
+name: Importar fotos desde Instagram (una sola vez)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar fotos públicas de @fotografiainolvidable
+        run: |
+          set -e
+          mkdir -p ig-photos
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
+          curl -sL -A "$UA" "https://imginn.com/fotografiainolvidable/" -o profile.html
+          echo "HTML bytes: $(wc -c < profile.html)"
+          python3 - <<'PY'
+          import re, html, urllib.request, pathlib
+          data = pathlib.Path('profile.html').read_text(errors='ignore')
+          urls = re.findall(r'https://scontent[^"\' )]+', data)
+          urls = [html.unescape(u) for u in urls]
+          # Solo fotos de publicaciones (640px), sin foto de perfil
+          urls = [u for u in urls if 's640x640' in u]
+          seen = []
+          for u in urls:
+              if u not in seen:
+                  seen.append(u)
+          print(f"{len(seen)} fotos encontradas")
+          req_headers = {'User-Agent': 'Mozilla/5.0'}
+          for i, u in enumerate(seen[:20], 1):
+              ext = 'webp' if '.webp' in u else 'jpg'
+              out = pathlib.Path(f'ig-photos/ig-{i:02d}.{ext}')
+              try:
+                  req = urllib.request.Request(u, headers=req_headers)
+                  out.write_bytes(urllib.request.urlopen(req, timeout=30).read())
+                  print(out, out.stat().st_size)
+              except Exception as e:
+                  print('ERROR', u[:80], e)
+          PY
+          ls -lh ig-photos/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ig-photos
+          path: ig-photos/
+          retention-days: 7
