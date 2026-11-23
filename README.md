@@ -24,9 +24,9 @@ En Cloudflare: **Workers & Pages → Create → Pages → Connect to Git** → e
 **Opción A (panel web, sin comandos):**
 1. **R2 → Create bucket** → nombre: `inolvidable-fotos`
 2. **D1 → Create database** → nombre: `inolvidable-db`. Al crearla, abre su **Console** y ejecuta todo el contenido de `migrations/0001_init.sql`.
-3. En tu proyecto Pages: **Settings → Functions → Bindings**:
-   - D1: variable `DB` → `inolvidable-db`
-   - R2: variable `BUCKET` → `inolvidable-fotos`
+3. Los bindings ya están declarados en `wrangler.toml` (por eso el botón "Add" de Settings → Bindings se ve deshabilitado, es normal):
+   - D1: `DB` → `inolvidable-db`
+   - R2: `BUCKET` → `inolvidable-fotos`
 4. **Settings → Environment variables** (Production), agrega dos *secrets*:
    - `ADMIN_PASSWORD` = tu contraseña para el panel (ej. una frase larga)
    - `SESSION_SECRET` = un texto largo cualquiera (30+ caracteres al azar)

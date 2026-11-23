@@ -2,8 +2,15 @@ name = "inolvidable-fotografia"
 compatibility_date = "2024-11-01"
 pages_build_output_dir = "public"
 
-# Los bindings D1 (DB -> inolvidable-db) y R2 (BUCKET -> inolvidable-fotos)
-# se configuran en el panel de Cloudflare:
-#   Proyecto Pages -> Settings -> Bindings
-# No se declaran aquí para que el panel sea la única fuente de verdad
-# (antes el database_id de ejemplo causaba el Error 8000022 al desplegar).
+# Bindings (declarados aquí porque al existir wrangler.toml, el panel
+# de Cloudflare deshabilita el botón "Add" en Settings -> Bindings):
+#   DB     -> D1  inolvidable-db
+#   BUCKET -> R2  inolvidable-fotos
+[[d1_databases]]
+binding = "DB"
+database_name = "inolvidable-db"
+database_id = "9d99d522-13a2-4436-9fee-5089d3d10eb4"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "inolvidable-fotos"
