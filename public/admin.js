@@ -67,7 +67,7 @@ async function loadGalleries() {
       <h4>Persona ${i + 1} · ${v.photos.length} favorita(s)</h4>
       <div class="fav-photos">${v.photos.map((ph) => `<a href="${ph.preview}" target="_blank" title="${ph.filename} — clic para ver en grande"><img src="${ph.thumb}" alt="${ph.filename}" loading="lazy"></a>`).join("")}</div>`).join("");
   });
-  document.querySelectorAll("[data-upload]").forEach((inp) => inp.onchange = () => uploadPhotos(inp.dataset.upload, inp.files));
+  document.querySelectorAll("[data-upload]").forEach((inp) => inp.onchange = () => { const fs = inp.files; inp.value = ""; uploadPhotos(inp.dataset.upload, fs); });
 }
 
 // Genera miniatura (600px) y previa (1600px) en el navegador: la galería carga rapidísimo y R2 solo almacena.
@@ -83,17 +83,17 @@ async function makeVersion(file, maxSize) {
   const bmp = await createImageBitmap(file);
   try { return await versionFromBitmap(bmp, maxSize); } finally { if (bmp.close) bmp.close(); }
 }
-async function uploadPhotos(galleryId, files) {
-  if (!files.length) return;
-  files = [...files];
-  $("up-progress").classList.remove("hidden");
+let lastFailed = { galleryId: null, files: [] };
+async function runUpload(galleryId, files) {
   let ok = 0, dup = 0; const failed = [];
+  let wakeLock = null;
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
-    let settled = false;
-    for (let attempt = 1; attempt <= 2 && !settled; attempt++) { // 1 reintento automático
+    let settled = false, lastErr = "";
+    for (let attempt = 1; attempt <= 3 && !settled; attempt++) { // hasta 2 reintentos con pausa
       try {
-        $("up-msg").textContent = `Subiendo ${f.name} (${i + 1}/${files.length}) · listas: ${ok} · saltadas: ${dup} · errores: ${failed.length}`;
+        $("up-msg").textContent = `Subiendo ${f.name} (${i + 1}/${files.length}) · listas: ${ok} · saltadas: ${dup} · con error: ${failed.length}`;
         const bmp = await createImageBitmap(f);
         let preview, thumb; const w = bmp.width, h = bmp.height;
         try { preview = await versionFromBitmap(bmp, 1600); thumb = await versionFromBitmap(bmp, 600); }
@@ -106,15 +106,48 @@ async function uploadPhotos(galleryId, files) {
         const r = await api(`/api/admin/galleries/${galleryId}/photos`, { method: "POST", body: fd });
         if (r.duplicate) dup++; else ok++;
         settled = true;
-      } catch (e) { if (attempt === 2) failed.push(f.name); }
+      } catch (e) { lastErr = e.message; if (attempt < 3) await new Promise((r) => setTimeout(r, 900 * attempt)); }
+    }
+    if (!settled) {
+      failed.push({ file: f, error: lastErr });
+      $("up-live").innerHTML = failed.slice(-6).map((x) => `<p class="bad">No subió: ${x.file.name} <span class="muted">(${x.error})</span></p>`).join("");
     }
     $("up-bar").style.width = `${((i + 1) / files.length) * 100}%`;
   }
-  $("up-progress").classList.add("hidden");
-  showToast(`Subida terminada: ${ok} nuevas · ${dup} ya existían (saltadas) · ${failed.length} con error`);
-  if (failed.length) alert(`Estas ${failed.length} fotos no subieron tras 2 intentos. Vuelve a seleccionar SOLO esas: las demás no se duplicarán.\n\n` + failed.slice(0, 30).join("\n") + (failed.length > 30 ? "\n…" : ""));
+  try { wakeLock && wakeLock.release(); } catch {}
+  return { ok, dup, failed };
+}
+function showUploadReport(galleryId, { ok, dup, failed }) {
+  lastFailed = { galleryId, files: failed.map((x) => x.file) };
+  $("up-live").innerHTML = "";
+  $("up-report").classList.remove("hidden");
+  $("up-msg").textContent = "Subida terminada";
+  $("up-report-summary").innerHTML = `<p><b>${ok}</b> fotos subidas · <b>${dup}</b> ya existían (saltadas) · <b class="${failed.length ? "bad" : ""}">${failed.length}</b> no subieron</p>` +
+    (failed.length ? `<p class="muted">Estas son las que dieron error (miniatura y nombre). Puedes reintentarlas con el botón, sin volver a elegir archivos:</p>` : `<p class="muted">Todo subió correctamente.</p>`);
+  $("up-failed-grid").innerHTML = failed.map((x) => `<figure><img src="${URL.createObjectURL(x.file)}" alt=""><figcaption>${x.file.name}<br><span>${x.error}</span></figcaption></figure>`).join("");
+  $("up-retry").classList.toggle("hidden", !failed.length);
+}
+async function uploadPhotos(galleryId, files) {
+  if (!files.length) return;
+  files = [...files];
+  $("up-progress").classList.remove("hidden");
+  $("up-report").classList.add("hidden");
+  $("up-live").innerHTML = "";
+  const result = await runUpload(galleryId, files);
+  showUploadReport(galleryId, result);
   loadGalleries();
 }
+$("up-retry").addEventListener("click", async () => {
+  if (!lastFailed.files.length) return;
+  $("up-report").classList.add("hidden");
+  const result = await runUpload(lastFailed.galleryId, lastFailed.files);
+  showUploadReport(lastFailed.galleryId, result);
+  loadGalleries();
+});
+$("up-close").addEventListener("click", () => {
+  $("up-progress").classList.add("hidden");
+  document.querySelectorAll("#up-failed-grid img").forEach((img) => URL.revokeObjectURL(img.src));
+});
 
 $("new-gallery-form").addEventListener("submit", async (e) => {
   e.preventDefault();

@@ -67,8 +67,21 @@
 </main>
 
 <div class="toast" id="toast"></div>
-<div class="progress-wrap hidden" id="up-progress"><div class="progress-box"><p id="up-msg">Subiendo…</p><div class="bar"><div id="up-bar"></div></div></div></div>
+<div class="progress-wrap hidden" id="up-progress"><div class="progress-box progress-wide">
+  <p id="up-msg">Subiendo…</p>
+  <div class="bar"><div id="up-bar"></div></div>
+  <div id="up-live" class="up-live"></div>
+  <div id="up-report" class="hidden">
+    <div id="up-report-summary"></div>
+    <div id="up-failed-grid" class="up-failed-grid"></div>
+    <div class="up-report-actions">
+      <button class="btn btn-gold btn-small hidden" id="up-retry" type="button">Reintentar solo las fallidas</button>
+      <button class="btn btn-ghost btn-small" id="up-close" type="button">Cerrar reporte</button>
+    </div>
+    <p class="muted small">Este reporte queda abierto hasta que lo cierres. Si cierras la pestaña se pierde la lista (pero las fotos ya subidas quedan guardadas).</p>
+  </div>
+</div></div>
 <script src="script.js"></script>
-<script src="admin.js?v=3"></script>
+<script src="admin.js?v=4"></script>
 </body>
 </html>
