@@ -86,8 +86,19 @@ function setZoom(scale, cx = innerWidth / 2, cy = innerHeight / 2) {
     if (p && $("lb-img").dataset.hq !== p.id) { $("lb-img").dataset.hq = p.id; const pre = new Image(); pre.onload = () => { if (gallery.photos[current] === p) $("lb-img").src = p.original; }; pre.src = p.original; }
   }
 }
-function openLb(i) { current = i; const p = gallery.photos[i]; const img = $("lb-img"); img.dataset.hq = ""; img.src = p.preview; resetZoom(); $("lb-dl").href = p.original; syncLbFav(); $("lightbox").classList.add("open"); document.body.style.overflow = "hidden"; }
-function closeLb() { $("lightbox").classList.remove("open"); document.body.style.overflow = ""; resetZoom(); }
+// Al abrir el visor se agrega una entrada al historial: así el botón
+// "atrás" del teléfono/celular CIERRA la foto en vez de sacar de la página.
+let lbInHistory = false;
+function openLb(i) {
+  const wasOpen = $("lightbox").classList.contains("open");
+  current = i; const p = gallery.photos[i]; const img = $("lb-img"); img.dataset.hq = ""; img.src = p.preview; resetZoom(); $("lb-dl").href = p.original; syncLbFav(); $("lightbox").classList.add("open"); document.body.style.overflow = "hidden";
+  if (!wasOpen) { history.pushState({ ifLightbox: true }, ""); lbInHistory = true; }
+}
+function closeLbUI() { $("lightbox").classList.remove("open"); document.body.style.overflow = ""; resetZoom(); lbInHistory = false; }
+function closeLb() { // cierre pedido por el usuario (X / Escape / fondo): consume la entrada del historial
+  if (lbInHistory) history.back(); else closeLbUI();
+}
+addEventListener("popstate", () => { if ($("lightbox").classList.contains("open")) closeLbUI(); });
 $("lb-img").addEventListener("dblclick", (e) => { e.preventDefault(); setZoom(zoom.scale > 1 ? 1 : 2.6, e.clientX, e.clientY); });
 $("lb-img").addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom.scale * (e.deltaY < 0 ? 1.18 : 0.85), e.clientX, e.clientY); }, { passive: false });
 const pointers = new Map(); let pinchDist = 0, dragLast = null;
@@ -101,7 +112,7 @@ $("lb-img").addEventListener("pointermove", (e) => {
 const endPointer = (e) => { pointers.delete(e.pointerId); if (pointers.size === 0) dragLast = null; pinchDist = 0; };
 $("lb-img").addEventListener("pointerup", endPointer);
 $("lb-img").addEventListener("pointercancel", endPointer);
-function syncLbFav() { const p = gallery.photos[current]; const on = favSet.has(p.id); $("lb-fav").innerHTML = HEART + "<span>Favorita</span>"; $("lb-fav").classList.toggle("is-fav", on); }
+function syncLbFav() { const p = gallery.photos[current]; const on = favSet.has(p.id); $("lb-fav").innerHTML = HEART; $("lb-fav").classList.toggle("is-fav", on); $("lb-fav").title = on ? "Quitar de favoritas" : "Agregar a favoritas"; $("lb-fav").setAttribute("aria-label", $("lb-fav").title); }
 $("lb-close").onclick = closeLb;
 $("lb-prev").onclick = () => openLb((current - 1 + gallery.photos.length) % gallery.photos.length);
 $("lb-next").onclick = () => openLb((current + 1) % gallery.photos.length);
