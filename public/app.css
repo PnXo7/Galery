@@ -33,3 +33,8 @@
 .gallery-grid figure{cursor:zoom-in}
 .dl{display:grid;place-items:center;text-decoration:none}
 .code-chip{background:#000;border:1px solid var(--gold);color:var(--gold2);padding:3px 12px;border-radius:8px;font-size:15px;letter-spacing:.08em}
+.ok{color:#9ed08a}
+.fav-photos{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+.fav-photos a{display:block;width:92px;height:92px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.fav-photos img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.fav-photos a:hover img{transform:scale(1.07)}

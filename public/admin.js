@@ -28,15 +28,17 @@ async function loadGalleries() {
       <div class="g-row">
         <div>
           <h3>${g.title}</h3>
-          <p class="muted">${g.photo_count} fotos · Vence: ${fmtDate(g.expires_at)} ${g.expired ? '<b class="bad">· VENCIDA</b>' : ""}</p>
+          <p class="muted">${g.photo_count} fotos · Personas que marcaron favoritas: ${g.clients_with_favs}</p>
+          <p class="muted small">Creada: ${fmtDate(g.created_at)}${g.session_date ? ` · Sesión: ${g.session_date}` : ""} · Vence: ${fmtDate(g.expires_at)} ${g.expired ? '<b class="bad">· VENCIDA</b>' : '<b class="ok">· ACTIVA</b>'}</p>
           <p class="muted small">Link cliente: <a href="${g.shareUrl}" target="_blank">${g.shareUrl}</a></p>
-          <p class="muted small">Código de acceso: ${g.code ? `<code class="code-chip">${g.code}</code>` : `<i>no visible (galería creada antes de esta mejora)</i>`}</p>
+          <p class="muted small">Código de acceso: ${g.code ? `<code class="code-chip">${g.code}</code>` : `<i>aún sin código visible: usa el botón "Crear código visible"</i>`}</p>
         </div>
         <div class="g-actions">
           <button class="btn btn-ghost btn-small" data-copy="${g.shareUrl}">Copiar link</button>
           ${g.code ? `<button class="btn btn-ghost btn-small" data-copy="${g.code}">Copiar código</button>` : ""}
           <button class="btn btn-ghost btn-small" data-newcode="${g.id}">${g.code ? "Regenerar código" : "Crear código visible"}</button>
-          <button class="btn btn-ghost btn-small" data-favs="${g.id}">Favoritas (${g.clients_with_favs} cliente/s)</button>
+          <button class="btn btn-ghost btn-small" data-rename="${g.id}" data-title="${g.title.replace(/"/g, "&quot;")}">Editar nombre</button>
+          <button class="btn btn-ghost btn-small" data-favs="${g.id}">Favoritas por persona (${g.clients_with_favs})</button>
           <button class="btn btn-ghost btn-small" data-extend="${g.id}">Extender</button>
           <button class="btn btn-danger btn-small" data-del="${g.id}">Eliminar</button>
         </div>
@@ -52,11 +54,20 @@ async function loadGalleries() {
   document.querySelectorAll("[data-newcode]").forEach((b) => b.onclick = async () => { if (!confirm("Se generará un código NUEVO: el código anterior dejará de funcionar (el LINK no cambia). ¿Continuar?")) return; const d = await api(`/api/admin/galleries/${b.dataset.newcode}/code`, { method: "POST", body: "{}" }); loadGalleries(); alert("Nuevo código de acceso:\n\n" + d.code + "\n\nYa quedó visible en la tarjeta de la galería."); });
   document.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => { if (confirm("¿Eliminar esta galería y TODAS sus fotos de R2? No se puede deshacer.")) { await api(`/api/admin/galleries/${b.dataset.del}`, { method: "DELETE" }); loadGalleries(); showToast("Galería eliminada"); } });
   document.querySelectorAll("[data-extend]").forEach((b) => b.onclick = async () => { const m = prompt("¿Extender por cuántos meses? (3, 5 o 6)", "3"); if (!m) return; await api(`/api/admin/galleries/${b.dataset.extend}/extend`, { method: "POST", body: JSON.stringify({ months: +m }) }); loadGalleries(); showToast("Galería extendida y activa"); });
+  document.querySelectorAll("[data-rename]").forEach((b) => b.onclick = async () => {
+    const nuevo = prompt("Nuevo nombre de la galería:", b.dataset.title);
+    if (!nuevo || !nuevo.trim() || nuevo.trim() === b.dataset.title) return;
+    await api(`/api/admin/galleries/${b.dataset.rename}/rename`, { method: "POST", body: JSON.stringify({ title: nuevo }) });
+    showToast("Nombre actualizado"); loadGalleries();
+  });
   document.querySelectorAll("[data-favs]").forEach((b) => b.onclick = async () => {
     const box = $(`favs-${b.dataset.favs}`); box.classList.toggle("hidden");
     if (box.dataset.loaded) return; box.dataset.loaded = 1;
-    const rows = await api(`/api/admin/galleries/${b.dataset.favs}/favorites`);
-    box.innerHTML = rows.length ? `<h4>Fotos favoritas de tus clientes:</h4>` + rows.map((r) => `<p>· ${r.filename} — marcada ${r.veces} vez/veces</p>`).join("") : "<p class='muted'>Aún no marcan favoritas en esta galería.</p>";
+    const d = await api(`/api/admin/galleries/${b.dataset.favs}/favorites`);
+    if (!d.visitors.length) { box.innerHTML = "<p class='muted'>Aún nadie marca favoritas en esta galería. Cuando un cliente toque el corazón en sus fotos, aquí verás su selección, separada por persona.</p>"; return; }
+    box.innerHTML = d.visitors.map((v, i) => `
+      <h4>Persona ${i + 1} · ${v.photos.length} favorita(s)</h4>
+      <div class="fav-photos">${v.photos.map((ph) => `<a href="${ph.preview}" target="_blank" title="${ph.filename} — clic para ver en grande"><img src="${ph.thumb}" alt="${ph.filename}" loading="lazy"></a>`).join("")}</div>`).join("");
   });
   document.querySelectorAll("[data-upload]").forEach((inp) => inp.onchange = () => uploadPhotos(inp.dataset.upload, inp.files));
 }
