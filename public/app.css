@@ -32,3 +32,4 @@
 .bar>div{background:linear-gradient(90deg,var(--gold),var(--gold2));height:100%;width:0;transition:width .3s}
 .gallery-grid figure{cursor:zoom-in}
 .dl{display:grid;place-items:center;text-decoration:none}
+.code-chip{background:#000;border:1px solid var(--gold);color:var(--gold2);padding:3px 12px;border-radius:8px;font-size:15px;letter-spacing:.08em}
