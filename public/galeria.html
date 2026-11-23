@@ -16,7 +16,7 @@
 
 <main class="page">
   <div class="container">
-    <div id="loading" class="center-msg">Cargando tu galería… 💛</div>
+    <div id="loading" class="center-msg">Cargando tu galería…</div>
 
     <div id="code-entry" class="hidden">
       <h2 class="section-title">Mis <em>Fotos</em></h2>
@@ -38,12 +38,12 @@
           <p class="gallery-meta" id="g-meta"></p>
         </div>
         <div class="gallery-actions">
-          <button class="btn btn-ghost btn-small" id="btn-fav-zip">⬇ Favoritas (<span id="fav-count">0</span>)</button>
-          <button class="btn btn-gold btn-small" id="btn-all-zip">⬇ Descargar todas</button>
+          <button class="btn btn-ghost btn-small" id="btn-fav-zip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg> Favoritas (<span id="fav-count">0</span>)</button>
+          <button class="btn btn-gold btn-small" id="btn-all-zip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg> Descargar todas</button>
         </div>
       </div>
       <div class="masonry gallery-grid" id="gallery-grid"></div>
-      <p class="note">Toca una foto para verla en grande · Marca con ❤️ tus favoritas · Descarga en calidad original.</p>
+      <p class="note">Toca una foto para verla en grande · Toca el corazón para marcar tus favoritas · Descarga en calidad original.</p>
     </div>
 
     <div id="error-view" class="center-msg hidden"></div>
@@ -55,10 +55,9 @@
   <button class="lb-nav" id="lb-prev">‹</button>
   <img id="lb-img" src="" alt="Foto en grande">
   <button class="lb-nav" id="lb-next">›</button>
-  <div class="lb-hint" id="lb-hint">Doble clic / pellizca para hacer zoom · Arrastra para moverte</div>
   <div class="lb-bar">
-    <button class="btn btn-ghost btn-small" id="lb-fav">♡ Favorita</button>
-    <a class="btn btn-gold btn-small" id="lb-dl" href="#" download>⬇ Descargar original</a>
+    <button class="btn btn-ghost btn-small" id="lb-fav"></button>
+    <a class="btn btn-gold btn-small" id="lb-dl" href="#" download><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg> Descargar original</a>
   </div>
 </div>
 

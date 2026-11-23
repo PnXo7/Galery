@@ -146,7 +146,6 @@ footer a:hover{color:var(--gold2)}
 .lightbox img{max-width:min(92vw,1100px);max-height:76vh;border-radius:10px;box-shadow:0 40px 90px rgba(0,0,0,.8);cursor:zoom-in;user-select:none;-webkit-user-drag:none;touch-action:none}
 .lightbox img.zoomed{cursor:grab}
 .lightbox img.zoomed:active{cursor:grabbing}
-.lb-hint{position:absolute;bottom:92px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12.5px;letter-spacing:.1em;background:rgba(10,8,6,.65);padding:6px 16px;border-radius:99px;pointer-events:none;white-space:nowrap}
 .lb-close{position:absolute;top:20px;right:24px;background:none;border:none;color:var(--cream);font-size:28px;cursor:pointer}
 .lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--cream);width:52px;height:52px;border-radius:50%;font-size:28px;cursor:pointer}
 #lb-prev{left:22px}#lb-next{right:22px}
@@ -164,3 +163,28 @@ footer a:hover{color:var(--gold2)}
   .nav-links{display:none} .code-row{flex-direction:column}
 }
 @media(max-width:560px){.cards{grid-template-columns:1fr}.section{padding:72px 0}.nav{padding:14px 18px}}
+
+/* Iconos SVG elegantes + header estable (no se deforma al bajar) */
+.ic{width:17px;height:17px;flex:none}
+.btn{gap:8px}
+.nav{flex-wrap:nowrap}
+.nav .brand,.nav .btn{white-space:nowrap;flex:none}
+.nav-cta{display:flex;align-items:center;gap:10px;flex:none}
+.admin-access{width:38px;height:38px;border:1px solid #4a4033;border-radius:50%;display:grid;place-items:center;color:var(--muted);transition:.25s;flex:none}
+.admin-access:hover{border-color:var(--gold);color:var(--gold2)}
+.admin-access .ic{width:16px;height:16px}
+.fav .ic,.dl .ic{width:19px;height:19px}
+.fav.active{color:#171310}
+.fav.active .ic{fill:currentColor}
+#lb-fav .ic{width:16px;height:16px}
+#lb-fav.is-fav{border-color:var(--gold);color:var(--gold2)}
+#lb-fav.is-fav .ic{fill:currentColor}
+@media(max-width:700px){
+  .nav,.nav.scrolled{padding:10px 14px;gap:10px}
+  .brand{gap:8px}
+  .brand-mark{width:33px;height:33px;font-size:16px}
+  .brand-text{font-size:10.5px;letter-spacing:.18em}
+  .brand-text small{font-size:7px;letter-spacing:.34em}
+  .nav .btn-small{padding:9px 15px;font-size:10.5px;letter-spacing:.1em}
+  .admin-access{width:33px;height:33px}
+}

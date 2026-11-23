@@ -16,7 +16,7 @@ function renderFilters(cats) {
   ["Todas", ...cats].forEach((c) => {
     const b = document.createElement("button");
     b.className = "chip" + (c === activeFilter ? " active" : "");
-    b.textContent = c === "Todas" ? "✦ Todas" : c;
+    b.textContent = c;
     b.onclick = () => { activeFilter = c; renderFilters(cats); renderGrid(); };
     bar.appendChild(b);
   });
@@ -61,5 +61,5 @@ document.getElementById("code-form").addEventListener("submit", async (e) => {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || "Código no válido");
     location.href = "galeria.html";
-  } catch (e2) { msg.textContent = "⚠️ " + e2.message; }
+  } catch (e2) { msg.textContent = e2.message; }
 });

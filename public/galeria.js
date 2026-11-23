@@ -3,6 +3,7 @@ const visitorId = localStorage.getItem("if_visitor") || (() => { const v = crypt
 const $ = (id) => document.getElementById(id);
 let gallery = null, current = 0;
 const favSet = new Set();
+const HEART = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20.5C7 16.5 3.5 13.3 3.5 9.6 3.5 7 5.4 5 7.9 5c1.6 0 3.2.9 4.1 2.3C12.9 5.9 14.5 5 16.1 5c2.5 0 4.4 2 4.4 4.6 0 3.7-3.5 6.9-8.5 10.9z"/></svg>';
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
@@ -26,7 +27,7 @@ async function init() {
 $("code-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   try { await api("/api/access", { method: "POST", body: JSON.stringify({ code: $("code-input").value.trim() }) }); init(); }
-  catch (e2) { $("code-msg").textContent = "⚠️ " + e2.message; }
+  catch (e2) { $("code-msg").textContent = e2.message; }
 });
 
 function render() {
@@ -39,8 +40,8 @@ function render() {
     <figure class="g-item">
       <img src="${p.thumb}" alt="${p.filename}" loading="lazy" data-open="${i}">
       <figcaption>
-        <button class="fav ${favSet.has(p.id) ? "active" : ""}" data-fav="${p.id}">${favSet.has(p.id) ? "♥" : "♡"}</button>
-        <a class="dl" href="${p.original}" download title="Descargar original">⬇</a>
+        <button class="fav ${favSet.has(p.id) ? "active" : ""}" data-fav="${p.id}" aria-label="Favorita">${HEART}</button>
+        <a class="dl" href="${p.original}" download title="Descargar original" aria-label="Descargar original"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg></a>
       </figcaption>
     </figure>`).join("");
   document.querySelectorAll("[data-open]").forEach((img) => img.addEventListener("click", () => openLb(+img.dataset.open)));
@@ -51,11 +52,11 @@ function syncFavCount() { $("fav-count").textContent = favSet.size; }
 async function toggleFav(photoId, btn) {
   try {
     const d = await api("/api/favorites", { method: "POST", body: JSON.stringify({ photoId, visitorId }) });
-    if (d.favorite) { favSet.add(photoId); showToast("❤️ Agregada a tus favoritas"); } else { favSet.delete(photoId); showToast("Quitado de favoritas"); }
-    if (btn) { btn.classList.toggle("active", d.favorite); btn.textContent = d.favorite ? "♥" : "♡"; }
+    if (d.favorite) { favSet.add(photoId); showToast("Agregada a tus favoritas"); } else { favSet.delete(photoId); showToast("Quitado de favoritas"); }
+    if (btn) btn.classList.toggle("active", d.favorite);
     syncFavCount();
     if (gallery.photos[current]?.id === photoId) syncLbFav();
-  } catch (e) { showToast("⚠️ " + e.message); }
+  } catch (e) { showToast(e.message); }
 }
 
 // Lightbox con zoom (doble clic / pellizco / rueda) y paneo (arrastrar)
@@ -65,7 +66,6 @@ function applyZoom(animate = true) {
   img.style.transition = animate ? "transform .25s ease" : "none";
   img.style.transform = `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`;
   img.classList.toggle("zoomed", zoom.scale > 1);
-  $("lb-hint").style.opacity = zoom.scale > 1 ? "0" : "1";
 }
 function resetZoom() { zoom = { scale: 1, x: 0, y: 0 }; applyZoom(false); }
 function clampPan() {
@@ -101,7 +101,7 @@ $("lb-img").addEventListener("pointermove", (e) => {
 const endPointer = (e) => { pointers.delete(e.pointerId); if (pointers.size === 0) dragLast = null; pinchDist = 0; };
 $("lb-img").addEventListener("pointerup", endPointer);
 $("lb-img").addEventListener("pointercancel", endPointer);
-function syncLbFav() { const p = gallery.photos[current]; const on = favSet.has(p.id); $("lb-fav").textContent = on ? "♥ Favorita" : "♡ Favorita"; }
+function syncLbFav() { const p = gallery.photos[current]; const on = favSet.has(p.id); $("lb-fav").innerHTML = HEART + "<span>Favorita</span>"; $("lb-fav").classList.toggle("is-fav", on); }
 $("lb-close").onclick = closeLb;
 $("lb-prev").onclick = () => openLb((current - 1 + gallery.photos.length) % gallery.photos.length);
 $("lb-next").onclick = () => openLb((current + 1) % gallery.photos.length);
@@ -111,7 +111,7 @@ addEventListener("keydown", (e) => { if (!$("lightbox").classList.contains("open
 
 // ZIP (generado en el navegador: gratis, sin costo de servidor)
 async function downloadZip(photos, label) {
-  if (!photos.length) return showToast("⚠️ No hay fotos para descargar");
+  if (!photos.length) return showToast("No hay fotos para descargar");
   $("zip-progress").classList.remove("hidden");
   try {
     const { downloadZip: makeZip } = await import("https://cdn.jsdelivr.net/npm/client-zip@2.4.5/index.js");
@@ -127,8 +127,8 @@ async function downloadZip(photos, label) {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = `${label}.zip`; a.click();
     URL.revokeObjectURL(a.href);
-    showToast("✅ ZIP listo. ¡A disfrutar tus fotos!");
-  } catch (e) { showToast("⚠️ No se pudo crear el ZIP: " + e.message); }
+    showToast("ZIP listo. ¡A disfrutar tus fotos!");
+  } catch (e) { showToast("No se pudo crear el ZIP: " + e.message); }
   $("zip-progress").classList.add("hidden");
 }
 $("btn-all-zip").onclick = () => downloadZip(gallery.photos, gallery.title.replace(/\s+/g, "-"));
