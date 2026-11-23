@@ -101,8 +101,8 @@ function closeLb() { // cierre pedido por el usuario (X / Escape / fondo): consu
 addEventListener("popstate", () => { if ($("lightbox").classList.contains("open")) closeLbUI(); });
 $("lb-img").addEventListener("dblclick", (e) => { e.preventDefault(); setZoom(zoom.scale > 1 ? 1 : 2.6, e.clientX, e.clientY); });
 $("lb-img").addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom.scale * (e.deltaY < 0 ? 1.18 : 0.85), e.clientX, e.clientY); }, { passive: false });
-const pointers = new Map(); let pinchDist = 0, dragLast = null;
-$("lb-img").addEventListener("pointerdown", (e) => { pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragLast = { x: e.clientX, y: e.clientY }; if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a.x - b.x, a.y - b.y); } $("lb-img").setPointerCapture(e.pointerId); });
+const pointers = new Map(); let pinchDist = 0, dragLast = null, swipeStart = null, wasPinch = false;
+$("lb-img").addEventListener("pointerdown", (e) => { pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragLast = { x: e.clientX, y: e.clientY }; if (pointers.size === 1) { swipeStart = { x: e.clientX, y: e.clientY }; wasPinch = false; } if (pointers.size === 2) { wasPinch = true; const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a.x - b.x, a.y - b.y); } $("lb-img").setPointerCapture(e.pointerId); });
 $("lb-img").addEventListener("pointermove", (e) => {
   if (!pointers.has(e.pointerId)) return;
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -110,7 +110,16 @@ $("lb-img").addEventListener("pointermove", (e) => {
   else if (zoom.scale > 1 && dragLast) { zoom.x += e.clientX - dragLast.x; zoom.y += e.clientY - dragLast.y; dragLast = { x: e.clientX, y: e.clientY }; clampPan(); applyZoom(false); }
 });
 const endPointer = (e) => { pointers.delete(e.pointerId); if (pointers.size === 0) dragLast = null; pinchDist = 0; };
-$("lb-img").addEventListener("pointerup", endPointer);
+// Deslizar (swipe) sin zoom: izquierda = siguiente foto, derecha = anterior
+$("lb-img").addEventListener("pointerup", (e) => {
+  if (swipeStart && !wasPinch && zoom.scale === 1) {
+    const dx = e.clientX - swipeStart.x, dy = e.clientY - swipeStart.y;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (dx < 0) $("lb-next").click(); else $("lb-prev").click();
+    }
+  }
+  swipeStart = null; endPointer(e);
+});
 $("lb-img").addEventListener("pointercancel", endPointer);
 function syncLbFav() { const p = gallery.photos[current]; const on = favSet.has(p.id); $("lb-fav").innerHTML = HEART; $("lb-fav").classList.toggle("is-fav", on); $("lb-fav").title = on ? "Quitar de favoritas" : "Agregar a favoritas"; $("lb-fav").setAttribute("aria-label", $("lb-fav").title); }
 $("lb-close").onclick = closeLb;
