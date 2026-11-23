@@ -31,6 +31,12 @@ const genCode = (title) => {
   const base = (title || "FOTOS").toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ ]/gi, "").trim().split(/\s+/).slice(0, 2).join("").replace(/[^A-Z]/g, "").slice(0, 10) || "FOTOS";
   return `${base}${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 };
+let _codeColOk = false;
+async function ensureCodeColumn(env) {
+  if (_codeColOk) return;
+  try { await env.DB.prepare("SELECT code_text FROM galleries LIMIT 1").all(); _codeColOk = true; }
+  catch { try { await env.DB.prepare("ALTER TABLE galleries ADD COLUMN code_text TEXT").run(); } catch {} _codeColOk = true; }
+}
 const isAdmin = async (env, req) => { const v = await readVal(env, cookie(req, "if_admin")); return v?.admin === true; };
 async function galleryAccess(env, req, galleryId) {
   if (await isAdmin(env, req)) return true;
@@ -133,6 +139,7 @@ export async function onRequest({ request: req, env }) {
 
     /* ---------- ADMIN: galerías ---------- */
     if (parts[1] === "galleries") {
+      await ensureCodeColumn(env);
       if (method === "GET" && !parts[2]) {
         const rows = (await env.DB.prepare(`SELECT g.*, (SELECT COUNT(*) FROM photos p WHERE p.gallery_id=g.id) AS photo_count, (SELECT COUNT(DISTINCT visitor_id) FROM favorites f WHERE f.gallery_id=g.id) AS clients_with_favs FROM galleries g ORDER BY g.created_at DESC`).all()).results;
         return json(rows.map(g => ({ ...g, code_hash: undefined, token: undefined, code: g.code_text || null, expired: g.status !== "active" || (g.expires_at && Date.now() > g.expires_at), shareUrl: `${url.origin}/galeria.html?t=${g.token}` })));
@@ -149,8 +156,19 @@ export async function onRequest({ request: req, env }) {
       const g = await loadGallery(env, parts[2]);
       if (!g) return err("Galería no encontrada.", 404);
       if (method === "GET" && parts[3] === "favorites") {
-        const rows = (await env.DB.prepare(`SELECT ph.filename, ph.id AS photo_id, COUNT(*) AS veces, GROUP_CONCAT(DISTINCT f.visitor_id) AS visitantes FROM favorites f JOIN photos ph ON ph.id=f.photo_id WHERE f.gallery_id=? GROUP BY f.photo_id ORDER BY veces DESC`).bind(g.id).all()).results;
-        return json(rows);
+        const rows = (await env.DB.prepare(`SELECT f.visitor_id, ph.id AS photo_id, ph.filename FROM favorites f JOIN photos ph ON ph.id=f.photo_id WHERE f.gallery_id=? ORDER BY f.visitor_id, f.created_at`).bind(g.id).all()).results;
+        const byVisitor = new Map();
+        for (const r of rows) {
+          if (!byVisitor.has(r.visitor_id)) byVisitor.set(r.visitor_id, []);
+          byVisitor.get(r.visitor_id).push({ id: r.photo_id, filename: r.filename, thumb: `/api/media/${r.photo_id}/thumb`, preview: `/api/media/${r.photo_id}/preview` });
+        }
+        return json({ visitors: [...byVisitor.entries()].map(([visitor_id, photos]) => ({ visitor_id, photos })) });
+      }
+      if (method === "POST" && parts[3] === "rename") {
+        const { title } = await body();
+        if (!title || !title.trim()) return err("El nombre no puede estar vacío.");
+        await env.DB.prepare("UPDATE galleries SET title=? WHERE id=?").bind(title.trim(), g.id).run();
+        return json({ ok: true, title: title.trim() });
       }
       if (method === "POST" && parts[3] === "code") {
         const code = genCode(g.title);
