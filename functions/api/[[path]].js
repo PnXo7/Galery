@@ -170,6 +170,8 @@ export async function onRequest({ request: req, env }) {
         const original = form.get("original"), preview = form.get("preview"), thumb = form.get("thumb");
         const filename = form.get("filename") || original?.name || "foto.jpg";
         if (!original) return err("Falta el archivo original.");
+        const existing = await env.DB.prepare("SELECT id FROM photos WHERE gallery_id=? AND filename=?").bind(g.id, filename).first();
+        if (existing) return json({ id: existing.id, duplicate: true });
         const pid = uid(), base = `galleries/${g.id}/${pid}`;
         await env.BUCKET.put(`${base}/original.jpg`, original.stream(), { httpMetadata: { contentType: original.type || "image/jpeg" } });
         if (preview) await env.BUCKET.put(`${base}/preview.webp`, preview.stream(), { httpMetadata: { contentType: "image/webp" } });
