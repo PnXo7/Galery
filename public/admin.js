@@ -31,12 +31,11 @@ async function loadGalleries() {
           <p class="muted">${g.photo_count} fotos · Personas que marcaron favoritas: ${g.clients_with_favs}</p>
           <p class="muted small">Creada: ${fmtDate(g.created_at)}${g.session_date ? ` · Sesión: ${g.session_date}` : ""} · Vence: ${fmtDate(g.expires_at)} ${g.expired ? '<b class="bad">· VENCIDA</b>' : '<b class="ok">· ACTIVA</b>'}</p>
           <p class="muted small">Link cliente: <a href="${g.shareUrl}" target="_blank">${g.shareUrl}</a></p>
-          <p class="muted small">Código de acceso: ${g.code ? `<code class="code-chip">${g.code}</code>` : `<i>aún sin código visible: usa el botón "Crear código visible"</i>`}</p>
+          ${g.code ? `<p class="muted small">Código de acceso: <code class="code-chip">${g.code}</code></p>` : ""}
         </div>
         <div class="g-actions">
           <button class="btn btn-ghost btn-small" data-copy="${g.shareUrl}">Copiar link</button>
           ${g.code ? `<button class="btn btn-ghost btn-small" data-copy="${g.code}">Copiar código</button>` : ""}
-          <button class="btn btn-ghost btn-small" data-newcode="${g.id}">${g.code ? "Regenerar código" : "Crear código visible"}</button>
           <button class="btn btn-ghost btn-small" data-rename="${g.id}" data-title="${g.title.replace(/"/g, "&quot;")}">Editar nombre</button>
           <button class="btn btn-ghost btn-small" data-favs="${g.id}">Favoritas por persona (${g.clients_with_favs})</button>
           <button class="btn btn-ghost btn-small" data-extend="${g.id}">Extender</button>
@@ -51,7 +50,6 @@ async function loadGalleries() {
       <div class="fav-list hidden" id="favs-${g.id}"></div>
     </div>`).join("");
   document.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => { await navigator.clipboard.writeText(b.dataset.copy); showToast("Copiado: " + b.dataset.copy.slice(0, 42)); });
-  document.querySelectorAll("[data-newcode]").forEach((b) => b.onclick = async () => { if (!confirm("Se generará un código NUEVO: el código anterior dejará de funcionar (el LINK no cambia). ¿Continuar?")) return; const d = await api(`/api/admin/galleries/${b.dataset.newcode}/code`, { method: "POST", body: "{}" }); loadGalleries(); alert("Nuevo código de acceso:\n\n" + d.code + "\n\nYa quedó visible en la tarjeta de la galería."); });
   document.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => { if (confirm("¿Eliminar esta galería y TODAS sus fotos de R2? No se puede deshacer.")) { await api(`/api/admin/galleries/${b.dataset.del}`, { method: "DELETE" }); loadGalleries(); showToast("Galería eliminada"); } });
   document.querySelectorAll("[data-extend]").forEach((b) => b.onclick = async () => { const m = prompt("¿Extender por cuántos meses? (3, 5 o 6)", "3"); if (!m) return; await api(`/api/admin/galleries/${b.dataset.extend}/extend`, { method: "POST", body: JSON.stringify({ months: +m }) }); loadGalleries(); showToast("Galería extendida y activa"); });
   document.querySelectorAll("[data-rename]").forEach((b) => b.onclick = async () => {
