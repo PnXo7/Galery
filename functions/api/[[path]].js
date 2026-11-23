@@ -135,7 +135,7 @@ export async function onRequest({ request: req, env }) {
     if (parts[1] === "galleries") {
       if (method === "GET" && !parts[2]) {
         const rows = (await env.DB.prepare(`SELECT g.*, (SELECT COUNT(*) FROM photos p WHERE p.gallery_id=g.id) AS photo_count, (SELECT COUNT(DISTINCT visitor_id) FROM favorites f WHERE f.gallery_id=g.id) AS clients_with_favs FROM galleries g ORDER BY g.created_at DESC`).all()).results;
-        return json(rows.map(g => ({ ...g, code: undefined, expired: g.status !== "active" || (g.expires_at && Date.now() > g.expires_at), shareUrl: `${url.origin}/galeria.html?t=${g.token}` })));
+        return json(rows.map(g => ({ ...g, code_hash: undefined, token: undefined, code: g.code_text || null, expired: g.status !== "active" || (g.expires_at && Date.now() > g.expires_at), shareUrl: `${url.origin}/galeria.html?t=${g.token}` })));
       }
       if (method === "POST" && !parts[2]) {
         const { title, sessionDate, months } = await body();
@@ -143,7 +143,7 @@ export async function onRequest({ request: req, env }) {
         const m = [3, 5, 6].includes(+months) ? +months : 6;
         const code = genCode(title), id = uid(), token = crypto.randomUUID() + crypto.randomUUID().replaceAll("-", "");
         const expires = Date.now() + m * 30 * 86400000;
-        await env.DB.prepare("INSERT INTO galleries (id, title, session_date, code_hash, token, expires_at) VALUES (?,?,?,?,?,?)").bind(id, title.trim(), sessionDate || null, await sha256(code), token, expires).run();
+        await env.DB.prepare("INSERT INTO galleries (id, title, session_date, code_hash, code_text, token, expires_at) VALUES (?,?,?,?,?,?,?)").bind(id, title.trim(), sessionDate || null, await sha256(code), code, token, expires).run();
         return json({ id, code, shareUrl: `${url.origin}/galeria.html?t=${token}`, expiresAt: expires });
       }
       const g = await loadGallery(env, parts[2]);
@@ -151,6 +151,11 @@ export async function onRequest({ request: req, env }) {
       if (method === "GET" && parts[3] === "favorites") {
         const rows = (await env.DB.prepare(`SELECT ph.filename, ph.id AS photo_id, COUNT(*) AS veces, GROUP_CONCAT(DISTINCT f.visitor_id) AS visitantes FROM favorites f JOIN photos ph ON ph.id=f.photo_id WHERE f.gallery_id=? GROUP BY f.photo_id ORDER BY veces DESC`).bind(g.id).all()).results;
         return json(rows);
+      }
+      if (method === "POST" && parts[3] === "code") {
+        const code = genCode(g.title);
+        await env.DB.prepare("UPDATE galleries SET code_hash=?, code_text=? WHERE id=?").bind(await sha256(code), code, g.id).run();
+        return json({ ok: true, code });
       }
       if (method === "POST" && parts[3] === "extend") {
         const { months } = await body(); const m = [3, 5, 6].includes(+months) ? +months : 3;
