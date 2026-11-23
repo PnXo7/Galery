@@ -58,9 +58,49 @@ async function toggleFav(photoId, btn) {
   } catch (e) { showToast("⚠️ " + e.message); }
 }
 
-// Lightbox
-function openLb(i) { current = i; const p = gallery.photos[i]; $("lb-img").src = p.preview; $("lb-dl").href = p.original; syncLbFav(); $("lightbox").classList.add("open"); document.body.style.overflow = "hidden"; }
-function closeLb() { $("lightbox").classList.remove("open"); document.body.style.overflow = ""; }
+// Lightbox con zoom (doble clic / pellizco / rueda) y paneo (arrastrar)
+let zoom = { scale: 1, x: 0, y: 0 };
+function applyZoom(animate = true) {
+  const img = $("lb-img");
+  img.style.transition = animate ? "transform .25s ease" : "none";
+  img.style.transform = `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`;
+  img.classList.toggle("zoomed", zoom.scale > 1);
+  $("lb-hint").style.opacity = zoom.scale > 1 ? "0" : "1";
+}
+function resetZoom() { zoom = { scale: 1, x: 0, y: 0 }; applyZoom(false); }
+function clampPan() {
+  const img = $("lb-img"), r = img.getBoundingClientRect();
+  const maxX = Math.max(0, (r.width - innerWidth * 0.92) / 2 + 80), maxY = Math.max(0, (r.height - innerHeight * 0.76) / 2 + 80);
+  zoom.x = Math.min(maxX, Math.max(-maxX, zoom.x)); zoom.y = Math.min(maxY, Math.max(-maxY, zoom.y));
+}
+function setZoom(scale, cx = innerWidth / 2, cy = innerHeight / 2) {
+  scale = Math.min(4, Math.max(1, scale));
+  if (scale === zoom.scale) return;
+  const img = $("lb-img"), r = img.getBoundingClientRect();
+  const px = (cx - (r.left + r.width / 2)) / zoom.scale, py = (cy - (r.top + r.height / 2)) / zoom.scale;
+  zoom.x -= px * (scale - zoom.scale); zoom.y -= py * (scale - zoom.scale); zoom.scale = scale;
+  if (zoom.scale === 1) { zoom.x = 0; zoom.y = 0; } else clampPan();
+  applyZoom();
+  if (zoom.scale > 1.4) { // al acercar, cargar la foto en calidad original para ver nítido
+    const p = gallery.photos[current];
+    if (p && $("lb-img").dataset.hq !== p.id) { $("lb-img").dataset.hq = p.id; const pre = new Image(); pre.onload = () => { if (gallery.photos[current] === p) $("lb-img").src = p.original; }; pre.src = p.original; }
+  }
+}
+function openLb(i) { current = i; const p = gallery.photos[i]; const img = $("lb-img"); img.dataset.hq = ""; img.src = p.preview; resetZoom(); $("lb-dl").href = p.original; syncLbFav(); $("lightbox").classList.add("open"); document.body.style.overflow = "hidden"; }
+function closeLb() { $("lightbox").classList.remove("open"); document.body.style.overflow = ""; resetZoom(); }
+$("lb-img").addEventListener("dblclick", (e) => { e.preventDefault(); setZoom(zoom.scale > 1 ? 1 : 2.6, e.clientX, e.clientY); });
+$("lb-img").addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom.scale * (e.deltaY < 0 ? 1.18 : 0.85), e.clientX, e.clientY); }, { passive: false });
+const pointers = new Map(); let pinchDist = 0, dragLast = null;
+$("lb-img").addEventListener("pointerdown", (e) => { pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragLast = { x: e.clientX, y: e.clientY }; if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a.x - b.x, a.y - b.y); } $("lb-img").setPointerCapture(e.pointerId); });
+$("lb-img").addEventListener("pointermove", (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinchDist) setZoom(zoom.scale * (d / pinchDist), (a.x + b.x) / 2, (a.y + b.y) / 2); pinchDist = d; }
+  else if (zoom.scale > 1 && dragLast) { zoom.x += e.clientX - dragLast.x; zoom.y += e.clientY - dragLast.y; dragLast = { x: e.clientX, y: e.clientY }; clampPan(); applyZoom(false); }
+});
+const endPointer = (e) => { pointers.delete(e.pointerId); if (pointers.size === 0) dragLast = null; pinchDist = 0; };
+$("lb-img").addEventListener("pointerup", endPointer);
+$("lb-img").addEventListener("pointercancel", endPointer);
 function syncLbFav() { const p = gallery.photos[current]; const on = favSet.has(p.id); $("lb-fav").textContent = on ? "♥ Favorita" : "♡ Favorita"; }
 $("lb-close").onclick = closeLb;
 $("lb-prev").onclick = () => openLb((current - 1 + gallery.photos.length) % gallery.photos.length);
