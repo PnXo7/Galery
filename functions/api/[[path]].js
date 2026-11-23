@@ -83,8 +83,9 @@ export async function onRequest({ request: req, env }) {
       const g = await loadGallery(env, gid);
       if (!g) return err("Galería no encontrada.", 404);
       if (!admin && (g.status !== "active" || (g.expires_at && Date.now() > g.expires_at))) return err("Esta galería ya venció.", 410);
-      const photos = (await env.DB.prepare("SELECT id, filename, width, height FROM photos WHERE gallery_id=? ORDER BY sort_order, created_at").bind(gid).all()).results
-        .map(p => ({ ...p, thumb: `/api/media/${p.id}/thumb`, preview: `/api/media/${p.id}/preview`, original: `/api/media/${p.id}/original` }));
+      const photos = (await env.DB.prepare("SELECT id, filename, width, height FROM photos WHERE gallery_id=?").bind(gid).all()).results
+        .map(p => ({ ...p, thumb: `/api/media/${p.id}/thumb`, preview: `/api/media/${p.id}/preview`, original: `/api/media/${p.id}/original` }))
+        .sort((a, b) => a.filename.localeCompare(b.filename, "es", { numeric: true, sensitivity: "base" })); // orden por nombre: IMG_2 antes que IMG_10
       const favs = (await env.DB.prepare("SELECT photo_id FROM favorites WHERE gallery_id=? AND visitor_id=?").bind(gid, url.searchParams.get("v") || "").all()).results.map(r => r.photo_id);
       return json({ ...galleryPublic(g, url.origin), photos, favorites: favs });
     }
