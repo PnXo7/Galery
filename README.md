@@ -36,7 +36,7 @@ En Cloudflare: **Workers & Pages → Create → Pages → Connect to Git** → e
 ```bash
 npm install
 npx wrangler login
-npx wrangler d1 create inolvidable-db        # copia el database_id a wrangler.toml
+npx wrangler d1 create inolvidable-db        # luego vincula DB y BUCKET en el panel (paso 3.3)
 npx wrangler r2 bucket create inolvidable-fotos
 npm run db:remote
 npx wrangler pages secret put ADMIN_PASSWORD --project-name inolvidable-fotografia
