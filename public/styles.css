@@ -73,11 +73,24 @@ a{color:inherit;text-decoration:none}
 .masonry figure:hover .cat-tag{opacity:1}
 @media(hover:none){.cat-tag{opacity:1}}
 
-/* MASONRY */
-.masonry{columns:3;column-gap:18px;margin-top:46px}
-.masonry figure{break-inside:avoid;margin-bottom:18px;border-radius:14px;overflow:hidden;position:relative}
-.masonry img{width:100%;transition:transform .6s}
+/* MOSAICO (portafolio y galerías): filas intercaladas de 3, 2 y 1 foto.
+   Patrón sobre una grilla de 6 columnas que se repite cada 6 fotos:
+   3 chicas (2 col c/u) -> 2 medianas (3 col c/u) -> 1 panorámica (6 col).
+   Funciona igual en computador y celular (máx. 3 por fila). */
+.masonry{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:46px}
+.masonry figure{border-radius:14px;overflow:hidden;position:relative;margin:0;min-height:120px;background:#171410}
+.masonry figure:nth-child(6n+1),.masonry figure:nth-child(6n+2),.masonry figure:nth-child(6n+3){grid-column:span 2;aspect-ratio:3/3.4}
+.masonry figure:nth-child(6n+4),.masonry figure:nth-child(6n+5){grid-column:span 3;aspect-ratio:4/3.1}
+.masonry figure:nth-child(6n+6){grid-column:span 6;aspect-ratio:16/8.2}
+.masonry img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:transform .6s}
 .masonry figure:hover img{transform:scale(1.04)}
+@media(max-width:560px){
+  .masonry{gap:8px}
+  .masonry figure{border-radius:9px;min-height:80px}
+  .masonry figure:nth-child(6n+1),.masonry figure:nth-child(6n+2),.masonry figure:nth-child(6n+3){aspect-ratio:3/3.6}
+  .masonry figure:nth-child(6n+4),.masonry figure:nth-child(6n+5){aspect-ratio:4/3.4}
+  .masonry figure:nth-child(6n+6){aspect-ratio:16/9.5}
+}
 .note{text-align:center;color:#7d7260;font-size:13px;margin-top:16px}
 
 /* ACCESS */
@@ -130,7 +143,10 @@ footer a:hover{color:var(--gold2)}
 /* LIGHTBOX */
 .lightbox{position:fixed;inset:0;z-index:300;background:rgba(5,4,3,.96);display:none;place-items:center}
 .lightbox.open{display:grid}
-.lightbox img{max-width:min(92vw,1100px);max-height:76vh;border-radius:10px;box-shadow:0 40px 90px rgba(0,0,0,.8)}
+.lightbox img{max-width:min(92vw,1100px);max-height:76vh;border-radius:10px;box-shadow:0 40px 90px rgba(0,0,0,.8);cursor:zoom-in;user-select:none;-webkit-user-drag:none;touch-action:none}
+.lightbox img.zoomed{cursor:grab}
+.lightbox img.zoomed:active{cursor:grabbing}
+.lb-hint{position:absolute;bottom:92px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12.5px;letter-spacing:.1em;background:rgba(10,8,6,.65);padding:6px 16px;border-radius:99px;pointer-events:none;white-space:nowrap}
 .lb-close{position:absolute;top:20px;right:24px;background:none;border:none;color:var(--cream);font-size:28px;cursor:pointer}
 .lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--cream);width:52px;height:52px;border-radius:50%;font-size:28px;cursor:pointer}
 #lb-prev{left:22px}#lb-next{right:22px}
@@ -144,7 +160,7 @@ footer a:hover{color:var(--gold2)}
 
 @media(max-width:960px){
   .cards{grid-template-columns:repeat(2,1fr)} .steps{grid-template-columns:1fr}
-  .masonry{columns:2} .about{grid-template-columns:1fr} .footer-grid{grid-template-columns:1fr}
+  .about{grid-template-columns:1fr} .footer-grid{grid-template-columns:1fr}
   .nav-links{display:none} .code-row{flex-direction:column}
 }
-@media(max-width:560px){.cards{grid-template-columns:1fr}.masonry{columns:1}.section{padding:72px 0}.nav{padding:14px 18px}}
+@media(max-width:560px){.cards{grid-template-columns:1fr}.section{padding:72px 0}.nav{padding:14px 18px}}
