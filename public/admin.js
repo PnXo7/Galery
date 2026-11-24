@@ -67,7 +67,7 @@ async function loadGalleries() {
       <h4>Persona ${i + 1} · ${v.photos.length} favorita(s)</h4>
       <div class="fav-photos">${v.photos.map((ph) => `<a href="${ph.preview}" target="_blank" title="${ph.filename} — clic para ver en grande"><img src="${ph.thumb}" alt="${ph.filename}" loading="lazy"></a>`).join("")}</div>`).join("");
   });
-  document.querySelectorAll("[data-upload]").forEach((inp) => inp.onchange = () => { const fs = inp.files; inp.value = ""; uploadPhotos(inp.dataset.upload, fs); });
+  document.querySelectorAll("[data-upload]").forEach((inp) => inp.onchange = () => { const fs = [...inp.files]; inp.value = ""; uploadPhotos(inp.dataset.upload, fs); });
 }
 
 // Genera miniatura (600px) y previa (1600px) en el navegador: la galería carga rapidísimo y R2 solo almacena.
