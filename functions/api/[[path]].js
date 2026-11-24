@@ -188,6 +188,26 @@ export async function onRequest({ request: req, env }) {
         await env.DB.prepare("DELETE FROM galleries WHERE id=?").bind(g.id).run();
         return json({ ok: true });
       }
+      // Subida DIRECTA a R2: el navegador envía cada archivo crudo (PUT) y el Worker
+      // solo lo pasa al bucket. Sin formData ni procesamiento = CPU casi cero
+      // (la vía anterior mataba subidas grandes por el límite de CPU del plan gratis).
+      if (method === "PUT" && parts[3] === "blob" && parts[4] && parts[5]) {
+        const kinds = { original: "original.jpg", preview: "preview.webp", thumb: "thumb.webp" };
+        if (!kinds[parts[5]]) return err("Tipo de archivo no válido.", 400);
+        const key = `galleries/${g.id}/${parts[4]}/${kinds[parts[5]]}`;
+        await env.BUCKET.put(key, req.body, { httpMetadata: { contentType: req.headers.get("Content-Type") || "application/octet-stream" } });
+        return json({ ok: true, key });
+      }
+      if (method === "POST" && parts[3] === "register") {
+        const { id: pid, filename, width, height } = await body();
+        if (!pid || !filename) return err("Faltan datos de la foto.");
+        const existing = await env.DB.prepare("SELECT id FROM photos WHERE gallery_id=? AND filename=?").bind(g.id, filename).first();
+        if (existing) return json({ id: existing.id, duplicate: true });
+        const base = `galleries/${g.id}/${pid}`;
+        await env.DB.prepare("INSERT INTO photos (id, gallery_id, filename, r2_original, r2_preview, r2_thumb, width, height) VALUES (?,?,?,?,?,?,?,?)")
+          .bind(pid, g.id, filename, `${base}/original.jpg`, `${base}/preview.webp`, `${base}/thumb.webp`, +(width || 0), +(height || 0)).run();
+        return json({ id: pid });
+      }
       // Subida de fotos (original + previa + miniatura generadas en el navegador)
       if (method === "POST" && parts[3] === "photos") {
         const form = await req.formData();
