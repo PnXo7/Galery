@@ -98,12 +98,15 @@ async function runUpload(galleryId, files) {
         let preview, thumb; const w = bmp.width, h = bmp.height;
         try { preview = await versionFromBitmap(bmp, 1600); thumb = await versionFromBitmap(bmp, 600); }
         finally { if (bmp.close) bmp.close(); }
-        const fd = new FormData();
-        fd.append("original", f, f.name); fd.append("filename", f.name);
-        fd.append("preview", preview, "preview.webp");
-        fd.append("thumb", thumb, "thumb.webp");
-        fd.append("width", w); fd.append("height", h);
-        const r = await api(`/api/admin/galleries/${galleryId}/photos`, { method: "POST", body: fd });
+        const pid = crypto.randomUUID();
+        const putRaw = async (kind, blob) => {
+          const rr = await fetch(`/api/admin/galleries/${galleryId}/blob/${pid}/${kind}`, { method: "PUT", headers: { "Content-Type": blob.type || "application/octet-stream" }, body: blob });
+          if (!rr.ok) { const d = await rr.json().catch(() => ({})); throw new Error(d.error || `Error ${rr.status} subiendo ${kind}`); }
+        };
+        await putRaw("original", f);
+        await putRaw("preview", preview);
+        await putRaw("thumb", thumb);
+        const r = await api(`/api/admin/galleries/${galleryId}/register`, { method: "POST", body: JSON.stringify({ id: pid, filename: f.name, width: w, height: h }) });
         if (r.duplicate) dup++; else ok++;
         settled = true;
       } catch (e) { lastErr = e.message; if (attempt < 3) await new Promise((r) => setTimeout(r, 900 * attempt)); }
