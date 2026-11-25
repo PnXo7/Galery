@@ -184,7 +184,11 @@ export async function onRequest({ request: req, env }) {
       }
       if (method === "DELETE") {
         const photos = (await env.DB.prepare("SELECT * FROM photos WHERE gallery_id=?").bind(g.id).all()).results;
-        for (const p of photos) for (const k of [p.r2_original, p.r2_preview, p.r2_thumb]) if (k) await env.BUCKET.delete(k);
+        // Borrado tolerante: si los objetos ya no están en R2 (o el bucket fue
+        // eliminado/recreado), el registro se borra igual.
+        for (const p of photos) for (const k of [p.r2_original, p.r2_preview, p.r2_thumb]) if (k) { try { await env.BUCKET.delete(k); } catch {} }
+        await env.DB.prepare("DELETE FROM favorites WHERE gallery_id=?").bind(g.id).run();
+        await env.DB.prepare("DELETE FROM photos WHERE gallery_id=?").bind(g.id).run();
         await env.DB.prepare("DELETE FROM galleries WHERE id=?").bind(g.id).run();
         return json({ ok: true });
       }
@@ -239,7 +243,7 @@ export async function onRequest({ request: req, env }) {
       }
       if (method === "DELETE" && parts[2]) {
         const p = await env.DB.prepare("SELECT * FROM portfolio_photos WHERE id=?").bind(parts[2]).first();
-        if (p) { await env.BUCKET.delete(p.r2_key); await env.DB.prepare("DELETE FROM portfolio_photos WHERE id=?").bind(p.id).run(); }
+        if (p) { try { await env.BUCKET.delete(p.r2_key); } catch {} await env.DB.prepare("DELETE FROM portfolio_photos WHERE id=?").bind(p.id).run(); }
         return json({ ok: true });
       }
     }
