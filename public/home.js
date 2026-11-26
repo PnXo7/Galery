@@ -1,12 +1,11 @@
 // Portafolio dinámico desde la API; con respaldo local si la API aún no está desplegada.
-const FALLBACK_CATS = ["Recién Nacido", "Embarazo", "Smash Cake", "Niños y Familia", "Matrimonios"];
+const FALLBACK_CATS = ["Recién Nacido", "Embarazo", "Smash Cake", "Niños y Familia"];
 const FALLBACK_PHOTOS = [
-  { src: "assets/img/ig/smash-celeste-1.jpg", cat: "Smash Cake" }, { src: "assets/img/ig/newborn-teresita.jpg", cat: "Recién Nacido" },
-  { src: "assets/img/ig/hermanas-otono.jpg", cat: "Niños y Familia" }, { src: "assets/img/maternity-2.webp", cat: "Embarazo" },
-  { src: "assets/img/ig/smash-ulises-torta.jpg", cat: "Smash Cake" }, { src: "assets/img/wedding-2.jpg", cat: "Matrimonios" },
-  { src: "assets/img/ig/cumple-globo.jpg", cat: "Smash Cake" }, { src: "assets/img/newborn-2.webp", cat: "Recién Nacido" },
-  { src: "assets/img/ig/smash-celeste-2.jpg", cat: "Smash Cake" }, { src: "assets/img/family-2.jpg", cat: "Niños y Familia" },
-  { src: "assets/img/maternity-1.jpg", cat: "Embarazo" }, { src: "assets/img/wedding-1.jpg", cat: "Matrimonios" },
+  { src: "assets/img/real/embarazo.webp", cat: "Embarazo" }, { src: "assets/img/real/recien-nacido.webp", cat: "Recién Nacido" },
+  { src: "assets/img/real/portada.webp", cat: "Embarazo" }, { src: "assets/img/real/smash-cake.webp", cat: "Smash Cake" },
+  { src: "assets/img/ig/hermanas-otono.jpg", cat: "Niños y Familia" }, { src: "assets/img/ig/newborn-teresita.jpg", cat: "Recién Nacido" },
+  { src: "assets/img/ig/smash-celeste-1.jpg", cat: "Smash Cake" }, { src: "assets/img/ig/smash-ulises-torta.jpg", cat: "Smash Cake" },
+  { src: "assets/img/ig/cumple-globo.jpg", cat: "Smash Cake" }, { src: "assets/img/ig/smash-celeste-2.jpg", cat: "Smash Cake" },
 ];
 let allPhotos = [], activeFilter = "Todas";
 
